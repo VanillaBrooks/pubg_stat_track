@@ -11,10 +11,10 @@ import datetime
 
 # local files
 from api import discord_token
+import pubg_api
 
-
-# ['kills', 'damageDealt', 'revives']
-utc_shift = datetime.timedelta(hours=7)
+# fields of the stats that we care about
+stats_fields = ['kills', 'damageDealt', 'revives']
 
 # conversion from discord name to pubg username
 discord_to_pubg = {
@@ -34,21 +34,25 @@ class MyClient(discord.Client):
         print(f'ready {self.user}')
 
     async def on_message(self, message):
-        print(message.author)
+        
         if '?pubg' in message.content:
             if "stats" in message.content:
+                print(f'query from {message.author}')
                 strs = message.content.split(' ')
 
                 hours = 10
                 for item in strs:
                     if item.isdigit():
                         hours = int(item)
-                current_time_utc = datetime.datetime.now() + utc_shift
+                current_time_utc = datetime.datetime.utcnow()
                 query_time = current_time_utc - datetime.timedelta(hours=hours)
 
+                pubg_user_list = await self.construct_user_list(message.author)
 
+                rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
+                data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
 
-                
+                # send the data off
 
             elif "graph" in message.content:
                 pass
@@ -56,9 +60,31 @@ class MyClient(discord.Client):
             else:
                 pass
                 # send help on stuff
-        
+    async def construct_user_list(self, author):
+        channels = client.get_all_channels()
+        users = []
+        author = str(author)
 
+        # cycle through all channels
+        for channel in channels:
+            # convert to strings for simplicity
+            channel_users = [str(i) for i in channel.voice_members]
 
+            # if the query comes from that channel the team
+            # must be playing in that channel
+            if author in channel_users:
+
+                for member in channel.voice_members:
+                    mem_str = str(member)
+
+                    # if the persons name has a pubg username
+                    # then we fetch it and add it to final list
+                    if mem_str in discord_to_pubg:
+                        users.append(discord_to_pubg[mem_str])
+
+        return users
+                
+    
     async def send_the_file(self,message, file_name):
         await client.send_file(message.channel, file_name)
 

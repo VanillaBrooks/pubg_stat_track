@@ -6,13 +6,13 @@ import datetime as dt
 
 # parse the strings from the api to a datetime object 
 # EXAMPLE STRING: '2019-03-16T22:49:19Z'
-def date_parse_from_string(input_string):
+async def date_parse_from_string(input_string):
     time_obj = dt.datetime.strptime(input_string, '%Y-%m-%dT%H:%M:%SZ')
     # print(f'time object is {time_obj}')
 
     return time_obj
 
-def get_relevant_rosters(player_list, start_time):
+async def get_relevant_rosters(player_list, start_time):
     api = pubg_python.PUBG(pubg_secret, pubg_python.Shard.PC_NA)
     all_rosters = []
     analyzed_matches = []
@@ -29,15 +29,15 @@ def get_relevant_rosters(player_list, start_time):
 
             match_data = api.matches().get(match_id)
                 
-            if date_parse_from_string(match_data.created_at) < start_time:
+            if await date_parse_from_string(match_data.created_at) < start_time:
                 break # no longer looking at matches from active session
             
-            all_rosters += find_all_rosters(match_data, player_list)
+            all_rosters += await find_all_rosters(match_data, player_list)
 
     return all_rosters
 
 # start paring through the rosters
-def find_all_rosters(match_data, player_list):
+async def find_all_rosters(match_data, player_list):
     rosters_to_check = []
 
     for roster in match_data.rosters:
@@ -49,8 +49,8 @@ def find_all_rosters(match_data, player_list):
 
     return rosters_to_check
 
-def parse_roster_stats(player_list, fields, rosters):
-    data = {player : {field: 0 for field in fields} for player in player_list}
+async def parse_roster_stats(player_list, fields, rosters):
+    data = {player : {field: [] for field in fields} for player in player_list}
 
     for roster in rosters:
         for person in roster.participants:
@@ -58,6 +58,6 @@ def parse_roster_stats(player_list, fields, rosters):
                 # start parsing stats for that person
                 stats = person.stats
                 for field in fields:
-                    data[person.name][field] += stats[field]
+                    data[person.name][field].append(stats[field])
 
     return data
