@@ -14,26 +14,54 @@ from api import discord_token
 
 
 # ['kills', 'damageDealt', 'revives']
+utc_shift = datetime.timedelta(hours=7)
 
+# conversion from discord name to pubg username
+discord_to_pubg = {
+    'Big Dick Bandit#8045': 'Loko_Soko',
+    'Gigolojoe#7817': 'TheGigoloJoe',
+    'PocPoc#7403': 'Poc_Poc',
+    'Pool Boy Steve#7324': 'SandyBrooks',
+    'colbykarlik#0348':'Captain_Crabby',
+    'LEGIQn#7532':'LEGIQn_',
+    'Joeyeyey#8697' : 'Joeyeyey',
+    'happypenguin#9475': 'Happy--Penguin'
+}
 
 class MyClient(discord.Client):
 
     async def on_ready(self):
-        pass
+        print(f'ready {self.user}')
+
     async def on_message(self, message):
-        if 'stuff' in message.content:
-            # do stuff
-            pass
+        print(message.author)
+        if '?pubg' in message.content:
+            if "stats" in message.content:
+                strs = message.content.split(' ')
+
+                hours = 10
+                for item in strs:
+                    if item.isdigit():
+                        hours = int(item)
+                current_time_utc = datetime.datetime.now() + utc_shift
+                query_time = current_time_utc - datetime.timedelta(hours=hours)
+
+
+
+                
+
+            elif "graph" in message.content:
+                pass
+
+            else:
+                pass
+                # send help on stuff
+        
 
 
     async def send_the_file(self,message, file_name):
         await client.send_file(message.channel, file_name)
 
-        # for channel in client.get_all_channels():
-        #     if 'cat' in channel.name:
-        #         logging.info(f'Sending file to channel: {channel}')
-        #         await client.send_file(channel, self.file)
-        #         # send_message
 
 # construct line graph and send to discord chat
 async def construct_graph():
