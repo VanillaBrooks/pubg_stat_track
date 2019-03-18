@@ -112,7 +112,7 @@ class MyClient(discord.Client):
                     # then we fetch it and add it to final list
                     if mem_str in discord_to_pubg:
                         users.append(discord_to_pubg[mem_str])
-        users.append('Captain_Crabby')
+
         print('users are: ', users)
         return users
                 
