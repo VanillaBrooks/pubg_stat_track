@@ -1,6 +1,10 @@
 # outside libraries
 import discord
 import requests
+import seaborn as sns
+import pandas as pd
+
+from pprint import pprint
 
 # std lib
 import os
@@ -27,6 +31,10 @@ discord_to_pubg = {
     'Joeyeyey#8697' : 'Joeyeyey',
     'happypenguin#9475': 'Happy--Penguin'
 }
+class ReturnData():
+    def __init__(self, user_list, data):
+        self.data= data
+        self.users = user_list
 
 class MyClient(discord.Client):
 
@@ -37,26 +45,24 @@ class MyClient(discord.Client):
         
         if '?pubg' in message.content:
             if "stats" in message.content:
-                print(f'query from {message.author}')
-                strs = message.content.split(' ')
+                result = await self.get_data(message)
+                data = result.data # for clairity
 
-                hours = 10
-                for item in strs:
-                    if item.isdigit():
-                        hours = int(item)
-                current_time_utc = datetime.datetime.utcnow()
-                query_time = current_time_utc - datetime.timedelta(hours=hours)
-
-                pubg_user_list = await self.construct_user_list(message.author)
-
-                rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
-                data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
-
-                # send the data off
+                # send the data off now
 
             elif "graph" in message.content:
-                pass
+                result = await self.get_data(message)
+                # df = pd.DataFrame(result.data)
+                
+                df_dict = {}
+                for field in stats_fields:
+                    df_dict[field] = []
+                    for user in result.users:
+                        df_dict[field].append(pd.DataFrame(result.data[user][field]))
 
+                print(df_dict['damageDealt'][0].head())
+
+                # pprint(df_dict)
             else:
                 pass
                 # send help on stuff
@@ -84,10 +90,25 @@ class MyClient(discord.Client):
 
         return users
                 
-    
     async def send_the_file(self,message, file_name):
         await client.send_file(message.channel, file_name)
 
+    async def get_data(self, message):
+        hours = 10
+        for item in message.content.split(' '):
+            if item.isdigit():
+                hours = int(item)
+        print(hours)
+
+        current_time_utc = datetime.datetime.utcnow()
+        query_time = current_time_utc - datetime.timedelta(hours=hours)
+
+        pubg_user_list = await self.construct_user_list(message.author)
+
+        rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
+        data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
+
+        return ReturnData(pubg_user_list,data)
 
 # construct line graph and send to discord chat
 async def construct_graph():
