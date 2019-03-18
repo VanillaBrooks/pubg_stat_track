@@ -31,6 +31,7 @@ discord_to_pubg = {
     'Joeyeyey#8697' : 'Joeyeyey',
     'happypenguin#9475': 'Happy--Penguin'
 }
+
 class ReturnData():
     def __init__(self, user_list, data):
         self.data= data
@@ -48,7 +49,7 @@ class MyClient(discord.Client):
                 result = await self.get_data(message)
                 data = result.data # for clairity
 
-                # send the data off now
+                pprint(data)
 
             elif "graph" in message.content:
                 result = await self.get_data(message)
