@@ -55,16 +55,9 @@ class MyClient(discord.Client):
             if "stats" in message.content:
                 print('in stats')
                 result = await self.get_data(message)
-                str_to_fmt = '```Points:\n'
 
                 points = await calculate_points(result)
-
-                for key in points:
-                    point_val = points[key]
-                    str_to_fmt += f'{key}: {point_val} \n'
-                str_to_fmt += '```'
-                await client.send_message(message.channel, str_to_fmt)
-
+                await self.send_stats(points, message.channel)
 
             elif "graph" in message.content:
                 result = await self.get_data(message)
@@ -80,7 +73,7 @@ class MyClient(discord.Client):
                         data = result.data[user][field]
                         cumulative_sum = []
                         for i in range(len(data)):
-                            dval = data[i]
+                            dval = data[i]      # TODO: call the function to calculate points if `points` is mentioend as a field
                             if i !=0:
                                 dval += cumulative_sum[i-1]
                             cumulative_sum.append(dval)
@@ -97,6 +90,7 @@ class MyClient(discord.Client):
                     \nPossible catagories (case sensitive): kills, damageDealt, revives```"
                 await client.send_message(message.channel, help_str)
 
+    # find all users playing in a channel
     async def construct_user_list(self, author):
         channels = client.get_all_channels()
         users = []
@@ -118,17 +112,16 @@ class MyClient(discord.Client):
                     # then we fetch it and add it to final list
                     if mem_str in discord_to_pubg:
                         users.append(discord_to_pubg[mem_str])
-        # users.append('Captain_Crabby')
+        users.append('Captain_Crabby')
         print('users are: ', users)
         return users
                 
-
+    # fetch data from the pubg api 
     async def get_data(self, message):
         hours = 10
         for item in message.content.split(' '):
             if item.isdigit():
                 hours = int(item)
-        print(hours)
 
         current_time_utc = datetime.datetime.utcnow()
         query_time = current_time_utc - datetime.timedelta(hours=hours)
@@ -139,6 +132,15 @@ class MyClient(discord.Client):
         data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
 
         return ReturnData(pubg_user_list, data)
+
+    # send out the stats to a discord channel
+    async def send_stats(self, points, channel):
+        str_to_fmt = '```Points:\n'
+        for key in points:
+            point_val = points[key]
+            str_to_fmt += f'{key}: {point_val} \n'
+        str_to_fmt += '```'
+        await client.send_message(channel, str_to_fmt)
 
 
 async def calculate_points(result):
@@ -152,7 +154,6 @@ async def calculate_points(result):
             points[user_key] += result.data[user_key][field_key] * \
                 stats_weights[field_key]
 
-
     print(' dictionary data: ')
     pprint(result.data)
     print(' points data:  ')
@@ -164,7 +165,7 @@ async def calculate_points(result):
 # construct line graph and send to discord chat
 async def construct_graph(df_dict, key):
     # concatenate the list of dataframes together
-    data = pd.concat(df_dict[key], axis=1).fillna(0)
+    data = pd.concat(df_dict[key], axis=1)#.fillna(0)
     print(data)
     sns.set(style="darkgrid")
     sns_plot =sns.lineplot(data=data).set_title(key)
@@ -172,9 +173,6 @@ async def construct_graph(df_dict, key):
     fig = sns_plot.get_figure()
     fig.savefig("graph.png")
 
-# send out the stats to a discord channel
-async def send_stats():
-    pass
 
 # sets up all logging config and logging folders
 def logger_config():
