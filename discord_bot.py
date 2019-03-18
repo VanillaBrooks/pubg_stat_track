@@ -19,6 +19,11 @@ import pubg_api
 
 # fields of the stats that we care about
 stats_fields = ['kills', 'damageDealt', 'revives']
+stats_weights = {
+    'kills': 1,
+    'damageDealt': .3/100,
+    'revives': .5
+}
 
 # conversion from discord name to pubg username
 discord_to_pubg = {
@@ -47,9 +52,11 @@ class MyClient(discord.Client):
         if '?pubg' in message.content:
             if "stats" in message.content:
                 result = await self.get_data(message)
-                data = result.data # for clairity
+                pprint(result.data['Captain_Crabby'])
+                str_to_fmt = 'Points:\n'
 
-                pprint(data)
+                points = await calculate_points(result)
+
 
             elif "graph" in message.content:
                 result = await self.get_data(message)
@@ -110,6 +117,24 @@ class MyClient(discord.Client):
         data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
 
         return ReturnData(pubg_user_list,data)
+
+async def calculate_points(result):
+    points = {user: 0 for user in result.users}
+    
+    for user_key in result.data:
+        for field_key in result.data[user_key]:
+            result.data[user_key][field_key] = sum(
+                result.data[user_key][field_key])
+
+            points[user_key] += result.data[user_key][field_key] * \
+                stats_weights[field_key]
+    print(' dictionary data: ')
+    pprint(result.data)
+    print(' points data:  ')
+    pprint(points)
+
+    return points
+
 
 # construct line graph and send to discord chat
 async def construct_graph():

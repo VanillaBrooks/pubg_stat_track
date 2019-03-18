@@ -22,10 +22,10 @@ async def get_relevant_rosters(player_list, start_time):
         
         for match_id in player.matches:
 
-            if match_id in analyzed_matches:
-                break # already parsed this match
+            if str(match_id) in analyzed_matches:
+                continue # already parsed this match
 
-            analyzed_matches.append(match_id)
+            analyzed_matches.append(str(match_id))
 
             match_data = api.matches().get(match_id)
                 
