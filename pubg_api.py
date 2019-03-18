@@ -61,3 +61,5 @@ def parse_roster_stats(player_list, fields, rosters):
                     data[person.name][field] += stats[field]
 
     return data
+
+# test comment
