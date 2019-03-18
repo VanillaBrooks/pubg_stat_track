@@ -52,10 +52,15 @@ class MyClient(discord.Client):
         if '?pubg' in message.content:
             if "stats" in message.content:
                 result = await self.get_data(message)
-                pprint(result.data['Captain_Crabby'])
-                str_to_fmt = 'Points:\n'
+                str_to_fmt = '```Points:\n'
 
                 points = await calculate_points(result)
+
+                for key in points:
+                    point_val = points[key]
+                    str_to_fmt += f'{key}: {point_val} \n'
+                str_to_fmt += '```'
+                await client.send_message(message.channel, str_to_fmt)
 
 
             elif "graph" in message.content:
@@ -123,11 +128,13 @@ async def calculate_points(result):
     
     for user_key in result.data:
         for field_key in result.data[user_key]:
-            result.data[user_key][field_key] = sum(
-                result.data[user_key][field_key])
+
+            result.data[user_key][field_key] = sum(result.data[user_key][field_key])
 
             points[user_key] += result.data[user_key][field_key] * \
                 stats_weights[field_key]
+
+
     print(' dictionary data: ')
     pprint(result.data)
     print(' points data:  ')
