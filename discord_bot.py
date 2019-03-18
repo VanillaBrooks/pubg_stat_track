@@ -3,6 +3,7 @@ import discord
 import requests
 import seaborn as sns
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from pprint import pprint
 
@@ -48,9 +49,11 @@ class MyClient(discord.Client):
         print(f'ready {self.user}')
 
     async def on_message(self, message):
-        
+        if str(message.author) == 'pubg_bot#0654':
+            return None
         if '?pubg' in message.content:
             if "stats" in message.content:
+                print('in stats')
                 result = await self.get_data(message)
                 str_to_fmt = '```Points:\n'
 
@@ -71,14 +74,29 @@ class MyClient(discord.Client):
                 for field in stats_fields:
                     df_dict[field] = []
                     for user in result.users:
-                        df_dict[field].append(pd.DataFrame(result.data[user][field]))
 
-                print(df_dict['damageDealt'][0].head())
+                        # this block calculates the cumulative sum of each element 
+                        # based on the elements that have come before it 
+                        data = result.data[user][field]
+                        cumulative_sum = []
+                        for i in range(len(data)):
+                            dval = data[i]
+                            if i !=0:
+                                dval += cumulative_sum[i-1]
+                            cumulative_sum.append(dval)
 
-                # pprint(df_dict)
+                        df = pd.DataFrame(cumulative_sum)
+                        df.columns = [user]
+                        df_dict[field].append(df)
+                await construct_graph(df_dict, 'damageDealt')
+                await client.send_file(message.channel, "graph.png")
+                os.remove("graph.png")
+                
             else:
-                pass
-                # send help on stuff
+                help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \
+                    \nPossible catagories (case sensitive): kills, damageDealt, revives```"
+                await client.send_message(message.channel, help_str)
+
     async def construct_user_list(self, author):
         channels = client.get_all_channels()
         users = []
@@ -100,11 +118,10 @@ class MyClient(discord.Client):
                     # then we fetch it and add it to final list
                     if mem_str in discord_to_pubg:
                         users.append(discord_to_pubg[mem_str])
-
+        # users.append('Captain_Crabby')
+        print('users are: ', users)
         return users
                 
-    async def send_the_file(self,message, file_name):
-        await client.send_file(message.channel, file_name)
 
     async def get_data(self, message):
         hours = 10
@@ -121,7 +138,8 @@ class MyClient(discord.Client):
         rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
         data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
 
-        return ReturnData(pubg_user_list,data)
+        return ReturnData(pubg_user_list, data)
+
 
 async def calculate_points(result):
     points = {user: 0 for user in result.users}
@@ -144,8 +162,15 @@ async def calculate_points(result):
 
 
 # construct line graph and send to discord chat
-async def construct_graph():
-    pass
+async def construct_graph(df_dict, key):
+    # concatenate the list of dataframes together
+    data = pd.concat(df_dict[key], axis=1).fillna(0)
+    print(data)
+    sns.set(style="darkgrid")
+    sns_plot =sns.lineplot(data=data).set_title(key)
+
+    fig = sns_plot.get_figure()
+    fig.savefig("graph.png")
 
 # send out the stats to a discord channel
 async def send_stats():
