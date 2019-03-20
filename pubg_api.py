@@ -3,6 +3,8 @@ from pprint import pprint
 from api import pubg_secret
 import datetime as dt
 
+#delete later
+import time
 
 # parse the strings from the api to a datetime object 
 # EXAMPLE STRING: '2019-03-16T22:49:19Z'
@@ -59,5 +61,6 @@ async def parse_roster_stats(player_list, fields, rosters):
                 stats = person.stats
                 for field in fields:
                     data[person.name][field].append(stats[field])
+
 
     return data

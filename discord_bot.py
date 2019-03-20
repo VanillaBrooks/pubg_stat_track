@@ -26,6 +26,8 @@ stats_weights = {
     'revives': .5
 }
 
+valid_fields = 'DBNOs assists boosts damageDealt headshotKills heals kills revives rideDistance timeSurvived weaponsAcquired winPlace'.split(' ')
+
 # conversion from discord name to pubg username
 discord_to_pubg = {
     'Big Dick Bandit#8045': 'Loko_Soko',
@@ -39,9 +41,10 @@ discord_to_pubg = {
 }
 
 class ReturnData():
-    def __init__(self, user_list, data):
+    def __init__(self, user_list, data, fields):
         self.data= data
         self.users = user_list
+        self.fields = fields
 
 class MyClient(discord.Client):
 
@@ -52,12 +55,22 @@ class MyClient(discord.Client):
         if str(message.author) == 'pubg_bot#0654':
             return None
         if '?pubg' in message.content:
-            if "stats" in message.content:
+            if "points" in message.content:
                 print('in stats')
                 result = await self.get_data(message)
 
                 points = await calculate_points(result)
-                await self.send_stats(points, message.channel)
+                await self.send_points(points, message.channel)
+            elif 'stats' in message.content:
+                result = await self.get_data(message)
+
+                await self.send_stats(result, message.channel)
+
+            elif 'fields' in message.content:
+                str_to_fmt = '```Valid fields to query:\n'
+                str_to_fmt += ''.join(i + ' ' for i in valid_fields)
+                str_to_fmt += '\n```'
+                await client.send_message(message.channel, str_to_fmt)
 
             elif "graph" in message.content:
                 result = await self.get_data(message)
@@ -81,6 +94,7 @@ class MyClient(discord.Client):
                         df = pd.DataFrame(cumulative_sum)
                         df.columns = [user]
                         df_dict[field].append(df)
+                # for field in result.fields:
                 await construct_graph(df_dict, 'damageDealt')
                 await client.send_file(message.channel, "graph.png")
                 os.remove("graph.png")
@@ -113,35 +127,61 @@ class MyClient(discord.Client):
                     if mem_str in discord_to_pubg:
                         users.append(discord_to_pubg[mem_str])
 
-        print('users are: ', users)
+        users.append('Captain_Crabby')
+        print('users are: ', users)                                                                                     # manually adding stats herre
+
         return users
                 
     # fetch data from the pubg api 
     async def get_data(self, message):
         hours = 10
+        field_args = []
+        capture_args = False
         for item in message.content.split(' '):
+            if capture_args:     # capture all fields after the digit
+                field_args.append(item)
             if item.isdigit():
                 hours = int(item)
+                capture_args = True
 
         current_time_utc = datetime.datetime.utcnow()
         query_time = current_time_utc - datetime.timedelta(hours=hours)
 
+        print('field args before ', field_args)
+        if len(field_args) == 0: # if no args were specified we use the default 3
+            field_args = stats_fields
+        print('field args are', field_args)
+
         pubg_user_list = await self.construct_user_list(message.author)
 
         rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
-        data = await pubg_api.parse_roster_stats(pubg_user_list, stats_fields, rosters)
+        data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, rosters)
+        
 
-        return ReturnData(pubg_user_list, data)
+        return ReturnData(pubg_user_list, data, field_args)
 
     # send out the stats to a discord channel
-    async def send_stats(self, points, channel):
+    async def send_points(self, points, channel):
         str_to_fmt = '```Points:\n'
         for key in points:
             point_val = points[key]
             str_to_fmt += f'{key}: {point_val} \n'
         str_to_fmt += '```'
         await client.send_message(channel, str_to_fmt)
-
+    async def send_stats(self, result, channel):
+        str_to_fmt = '```Stats: '
+        for field in result.fields:
+            str_to_fmt += field + ' '
+        str_to_fmt += '\n'
+        
+        for user in result.users:
+            str_to_fmt += user + ' '
+            for field in result.fields:
+                str_to_fmt += str(sum(result.data[user][field])) + ' '
+            str_to_fmt+='\n'
+        str_to_fmt += '```'
+        print(str_to_fmt)
+        await client.send_message(channel, str_to_fmt)
 
 async def calculate_points(result):
     points = {user: 0 for user in result.users}
