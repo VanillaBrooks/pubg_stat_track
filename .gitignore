@@ -2,3 +2,7 @@ api.py
 logging/
 __pycache__/
 .vscode/
+__pycache__/
+build/
+dist/
+pubg_stat_track.egg-info/
