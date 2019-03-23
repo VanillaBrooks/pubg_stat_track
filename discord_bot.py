@@ -51,6 +51,7 @@ class MyClient(discord.Client):
 
             if "points" in message.content:
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
+                print("users from result, ", result.users)
                 points = await utils.calculate_points(stats_weights, result)
                 await senders.send_points(client, points, message.channel)
 
@@ -73,15 +74,14 @@ class MyClient(discord.Client):
             elif 'combo' in message.content:
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
                 points = await utils.calculate_points(stats_weights, result)
-                await senders.send_combo(client, result, points, message.channel)
+                combined = await utils.merge_dicts(result.stat_totals(), points)
+                
+                await senders.send_combo(client, combined, message.channel)
 
             else:
                 help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \
                     \nPossible catagories (case sensitive): kills, damageDealt, revives```"
                 await client.send_message(message.channel, help_str)
-
-
-                
 
 
 if __name__ == '__main__':
