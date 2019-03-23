@@ -20,7 +20,6 @@ import pubg_api
 
 # fields of the stats that we care about
 stats_fields = ['kills', 'damageDealt', 'revives']
-
 stats_weights = {
     'kills': 1,
     'damageDealt': .3/100,
@@ -38,7 +37,8 @@ discord_to_pubg = {
     'colbykarlik#0348':'Captain_Crabby',
     'LEGIQn#7532':'LEGIQn_',
     'Joeyeyey#8697' : 'Joeyeyey',
-    'happypenguin#9475': 'Happy--Penguin'
+    'happypenguin#9475': 'Happy--Penguin',
+    'Torrannosaurusrex#1167': 'Prowler337'
 }
 
 class ReturnData():
@@ -51,27 +51,6 @@ class MyClient(discord.Client):
 
     async def on_ready(self):
         print(f'ready {self.user}')
-
-
-
-        # This block is for moving michael to his resting place if hes deaf
-        MICHAELS_RESTING_PLACE_CHANNEL = discord.utils.get(
-            client.get_all_channels(), server__name='Anger Central', name="Michael's Resting Place")
-
-        while True:
-            await asyncio.sleep(5)
-
-            channels = client.get_all_channels()
-
-            for channel in channels:
-                for member in channel.voice_members:
-                    print(str(member))
-                    if str(member) == "LEGIQn#7532":
-                        if member.voice.self_deaf:
-                            try:
-                                await client.move_member(member, MICHAELS_RESTING_PLACE_CHANNEL)
-                            except Exception:
-                                print('there was an error moving michael to a new channel')
 
     async def on_message(self, message):
         if str(message.author) == 'pubg_bot#0654':
@@ -120,6 +99,14 @@ class MyClient(discord.Client):
                 await construct_graph(df_dict, 'damageDealt')
                 await client.send_file(message.channel, "graph.png")
                 os.remove("graph.png")
+
+
+            elif 'combo' in message.content:
+                result = await self.get_data(message)
+                points = await calculate_points(result)
+                await self.send_combo(result, points, message.channel)
+
+
                 
             else:
                 help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \
@@ -205,6 +192,24 @@ class MyClient(discord.Client):
         print(str_to_fmt)
         await client.send_message(channel, str_to_fmt)
 
+
+    async def send_combo(self, result, points,  channel):
+        str_to_fmt = '```Stats: '
+        for field in result.fields:
+            str_to_fmt += field + ' '
+        str_to_fmt += str('points')
+        str_to_fmt += '\n'
+        
+        for user in result.users:
+            str_to_fmt += user + ' '
+            for field in result.fields:
+                str_to_fmt += str(result.data[user][field]) + ' '
+            str_to_fmt += str(points[user])
+            str_to_fmt+='\n'
+        str_to_fmt += '```'
+        await client.send_message(channel, str_to_fmt)
+
+
 async def calculate_points(result):
     points = {user: 0 for user in result.users}
     
@@ -215,6 +220,8 @@ async def calculate_points(result):
 
             points[user_key] += result.data[user_key][field_key] * \
                 stats_weights[field_key]
+
+        
 
     print(' dictionary data: ')
     pprint(result.data)
