@@ -6,3 +6,4 @@ __pycache__/
 build/
 dist/
 pubg_stat_track.egg-info/
+api_brooksie.py

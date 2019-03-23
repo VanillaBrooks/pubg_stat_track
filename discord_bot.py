@@ -20,6 +20,7 @@ import pubg_api
 
 # fields of the stats that we care about
 stats_fields = ['kills', 'damageDealt', 'revives']
+
 stats_weights = {
     'kills': 1,
     'damageDealt': .3/100,
@@ -50,6 +51,27 @@ class MyClient(discord.Client):
 
     async def on_ready(self):
         print(f'ready {self.user}')
+
+
+
+        # This block is for moving michael to his resting place if hes deaf
+        MICHAELS_RESTING_PLACE_CHANNEL = discord.utils.get(
+            client.get_all_channels(), server__name='Anger Central', name="Michael's Resting Place")
+
+        while True:
+            await asyncio.sleep(5)
+
+            channels = client.get_all_channels()
+
+            for channel in channels:
+                for member in channel.voice_members:
+                    print(str(member))
+                    if str(member) == "LEGIQn#7532":
+                        if member.voice.self_deaf:
+                            try:
+                                await client.move_member(member, MICHAELS_RESTING_PLACE_CHANNEL)
+                            except Exception:
+                                print('there was an error moving michael to a new channel')
 
     async def on_message(self, message):
         if str(message.author) == 'pubg_bot#0654':
