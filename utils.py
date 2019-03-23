@@ -140,8 +140,8 @@ async def construct_user_list(discord_to_pubg, author, client):
                 if mem_str in discord_to_pubg:
                     users.append(discord_to_pubg[mem_str])
 
-    users.append('Captain_Crabby')
-    users.append('Loko_Soko')
+    # users.append('Captain_Crabby')
+    # users.append('Loko_Soko')
     print('users are: ', users)                                                                                     # manually adding stats herre
 
     return users
