@@ -2,7 +2,7 @@ import pubg_python
 from pprint import pprint
 from api import pubg_secret
 import datetime as dt
-
+import asyncio
 #delete later
 import time
 
@@ -11,27 +11,45 @@ import time
 async def date_parse_from_string(input_string):
     time_obj = dt.datetime.strptime(input_string, '%Y-%m-%dT%H:%M:%SZ')
     # print(f'time object is {time_obj}')
-
     return time_obj
 
-async def get_relevant_rosters(player_list, start_time, logging):
+async def get_relevant_rosters(player_list, start_time, logging, client, query_channel):
     api = pubg_python.PUBG(pubg_secret, pubg_python.Shard.PC_NA)
     all_rosters = []
     analyzed_matches = []
 
     for current_player in player_list:              # todo: use player_list instead
-        player = api.players().filter(player_names=[current_player])[0]  # player_list later
-        
+        exception = True
+        while exception:
+            try:
+                player = api.players().filter(player_names=[current_player])[0]  # player_list later
+                exception = False
+            except pubg_python.exceptions.RateLimitError:
+                await client.send_message(query_channel, 'rate limited. continuing in 10 seconds')
+                await asyncio.sleep(10)
+            
+            
         for match_id in player.matches:
+            logging.info(f"checking {match_id} from matches for {current_player}")
 
             if str(match_id) in analyzed_matches:
+                logging.info(f"{match_id} has already been copied over")
                 continue # already parsed this match
 
             analyzed_matches.append(str(match_id))
 
-            match_data = api.matches().get(match_id)
-                
+            exception = True
+            while exception:
+                try:
+                    match_data = api.matches().get(match_id)
+                    exception = False
+                except pubg_python.exceptions.RateLimitError:
+                    await client.send_message(query_channel, 'rate limited. continuing in 10 seconds')
+                    await asyncio.sleep(10)
+
+                    
             if await date_parse_from_string(match_data.created_at) < start_time:
+                logging.info(f"match start time {start_time} is outside the time parameter; breaking")
                 break # no longer looking at matches from active session
             
             all_rosters += await find_all_rosters(match_data, player_list, logging)
@@ -46,6 +64,8 @@ async def find_all_rosters(match_data, player_list, logging):
 
         for person in roster.participants:
             if person.name in player_list:
+                logging.info(
+                    f"{person.name} is in the roster adding the roster to to checked later: {[person.name for person in roster.participants]}")
                 rosters_to_check.append(roster)
                 break
 

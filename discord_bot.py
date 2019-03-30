@@ -68,33 +68,38 @@ class MyClient(discord.Client):
             if "points" in message.content:
                 logging.info(f"handling {message.id} for points")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+
                 logging.info("return from get_data in points")
-                print("users from result, ", result.users)
                 points = await utils.calculate_points(stats_weights, result, logging)
+
                 logging.info("return from calculate_points in points")
                 await senders.send_points(client, points, message.channel, logging)
 
             elif 'stats' in message.content:
                 logging.info(f"handling {message.id} for stats")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+
                 await senders.send_stats(client, result, message.channel, logging)
 
             elif 'fields' in message.content:
                 logging.info(f"handling {message.id} for fields")
+
                 str_to_fmt = '```Valid fields to query:\n'
                 str_to_fmt += ''.join(i + ' ' for i in valid_fields)
                 str_to_fmt += '\n```'
+
                 await client.send_message(message.channel, str_to_fmt)
 
             elif "graph" in message.content:
                 logging.info(f"handling {message.id} for graph")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+
                 if result.points:
                     print("had to modify data")
                     points = await utils.calculate_points(stats_weights, result, logging, True)
                     result.data = await utils.merge_dicts(result.data_copy(), points)
                     result.clean_data()
-                pprint(result.data)
+
                 await senders.graph(client, result, message, logging)
 
                 os.remove("graph.png")

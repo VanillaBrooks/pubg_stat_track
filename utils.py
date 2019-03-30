@@ -68,7 +68,8 @@ async def calculate_points(stats_weights, result, logging, list_format=False):
         points = {user: {"points": []} for user in result.users}
     else:
         points = {user: {"points": 0.0} for user in result.users}
-    
+    logging.info(f"starting to calculate points with with list_format {list_format}")
+
     for user_key in result.data:
         for field_key in result.data[user_key]:
             if not (field_key in list(stats_weights.keys())):
@@ -82,8 +83,7 @@ async def calculate_points(stats_weights, result, logging, list_format=False):
                 total_sum = sum(result.data[user_key][field_key])
                 points[user_key]['points'] += total_sum * weight
 
-    print("points before")
-    pprint(points)
+
     if list_format:
         for user in points:
             deep = []
@@ -100,28 +100,6 @@ async def calculate_points(stats_weights, result, logging, list_format=False):
 
     print("points are ")
     pprint(points)
-    return points
-
-async def calculate_points_sequential(stats_weights, result, logging):
-    points = {user: {"points": []} for user in result.users}
-
-    for user_key in result.data:
-        for field_key in result.data[user_key]:
-            if not (field_key in list(stats_weights.keys())):
-                continue
-
-            weight = stats_weights[field_key]
-
-            total_sum = sum(result.data[user_key][field_key])
-            data = [weight * i for i in result.data[user_key][field_key]]
-            points[user].append(data)
-
-
-            points[user_key]['points'] += total_sum * weight
-
-    for user in points:
-        points[user]['points'] = round(points[user]['points'] ,2)
-
     return points
 
 
@@ -171,7 +149,7 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
         
     pubg_user_list = await construct_user_list(discord_to_pubg, message.author, client, logging)
 
-    rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging)
+    rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging, client, message.channel)
     data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, rosters, logging)
     
     # calculate the minimun number of games someone in the party has
@@ -285,13 +263,10 @@ class ReturnData():
 async def find_max_length(input_dict, logging):
     max_len = 0
     sample_user = list(input_dict.keys())[0]
-    print(f"sample user is {sample_user}")
     len_dict = {field: 0 for field in input_dict[sample_user]}
     len_dict["username"] = 0
 
-    # TODO: Fix this to use max_len as a global variable 
-    # to reduce ugly syntax currnetly used. Errored when originally
-    # written
+
     def change_len(x, len_dict, field, raw = False):
         if field == "username":
             data = x
