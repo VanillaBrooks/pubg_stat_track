@@ -49,7 +49,7 @@ def logger_config():
         datetime.datetime.now().strftime('%m-%d__%H-%M-%S') + '.txt'
 
     logging.basicConfig(filename=LOG_FILENAME,
-                        level=logging.INFO,
+                        level=logging.DEBUG,
                         format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -65,7 +65,7 @@ async def calculate_points(stats_weights, result, logging, list_format=False):
         <dict> with (key: value) pair of (username: point total)
     '''
     if list_format:
-        points = {user: {field: [] for field in result.extra_fields} for user in result.users}
+        points = {user: {"points": []} for user in result.users}
     else:
         points = {user: {"points": 0.0} for user in result.users}
     
@@ -73,14 +73,51 @@ async def calculate_points(stats_weights, result, logging, list_format=False):
         for field_key in result.data[user_key]:
             if not (field_key in list(stats_weights.keys())):
                 continue
+
+            weight = stats_weights[field_key]
             if list_format:
-                pass
-#############################################################################
+                data = [weight * i for i in result.data[user_key][field_key]]
+                points[user_key]['points'].append(data)
             else:
                 total_sum = sum(result.data[user_key][field_key])
-                weight = stats_weights[field_key]
-
                 points[user_key]['points'] += total_sum * weight
+
+    print("points before")
+    pprint(points)
+    if list_format:
+        for user in points:
+            deep = []
+            for i in range(len(points[user]['points'][0])):
+                count = 0
+                for sublist in points[user]['points']:
+                    count += sublist[i]
+                deep.append(round(count, 2))
+            points[user]['points'] = deep
+
+    else:
+        for user in points:
+            points[user]['points'] = round(points[user]['points'] ,2)
+
+    print("points are ")
+    pprint(points)
+    return points
+
+async def calculate_points_sequential(stats_weights, result, logging):
+    points = {user: {"points": []} for user in result.users}
+
+    for user_key in result.data:
+        for field_key in result.data[user_key]:
+            if not (field_key in list(stats_weights.keys())):
+                continue
+
+            weight = stats_weights[field_key]
+
+            total_sum = sum(result.data[user_key][field_key])
+            data = [weight * i for i in result.data[user_key][field_key]]
+            points[user].append(data)
+
+
+            points[user_key]['points'] += total_sum * weight
 
     for user in points:
         points[user]['points'] = round(points[user]['points'] ,2)
@@ -117,8 +154,21 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
 
     if len(field_args) == 0: # if no args were specified we use the default 3
         field_args = list(stats_weights.keys())
-    logging.info(f"arguments for fields to query are {field_args}")
+    
+    remove_later = []
+    points_flag = False
+    if "pts" in field_args:
+        points_flag = True
+        field_args.remove("pts")
+        
+        for i in list(stats_weights):
+            if i not in field_args:
+                remove_later.append(i)
+                field_args.append(i)
 
+
+    logging.info(f"arguments for fields to query are {field_args}")
+        
     pubg_user_list = await construct_user_list(discord_to_pubg, message.author, client, logging)
 
     rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging)
@@ -146,22 +196,7 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
             for _ in range(len(data[user][field])-min_len):
                 data_copy[user][field].pop()
     
-    for user in data_copy:
-        for field in data_copy[user]:
-            L = len(data_copy[user][field])
-            print(f'user {user} L: {L}')
-            if L == 0:
-                logging.info(
-                    f"{user} is being removed from the query because they have no data")
-                del data_copy[user]
-                pubg_user_list.remove(user)
-            elif min_len == 0:
-                min_len = L
-            elif L < min_len:
-                min_len = L
-            break
-
-    return ReturnData(pubg_user_list, data_copy, field_args)
+    return ReturnData(pubg_user_list, data_copy, field_args, points_flag, remove_later)
 
 
 # find all users playing in a channel
@@ -196,9 +231,9 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
-    users += "TheGigoloJoe Poc_Poc Captain_Crabby Happy--Penguin".split()
+    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Happy--Penguin".split()
 
-    print('users are: ', users)                                                                                     # manually adding stats herre
+    # print('users are: ', users)                                                                                     # manually adding stats herre
 
     return users
 
@@ -214,10 +249,12 @@ async def merge_dicts(*args):
     return total
 
 class ReturnData():
-    def __init__(self, user_list, data, fields):
+    def __init__(self, user_list, data, fields, points_flag, to_be_removed):
         self.data = data
         self.users = user_list
         self.fields = fields
+        self.points = points_flag
+        self.remove_args = to_be_removed
 
     # return a copy of the dictionary with summed and rounded values
     def stat_totals(self):
@@ -228,6 +265,19 @@ class ReturnData():
         return copy
     def data_copy(self):
         return dict(self.data)
+
+    def clean_data(self):
+        cpy = dict(self.data)
+        print(f"\n\n fields are {self.fields} to be removed are {self.remove_args} ")
+        for user in self.data:
+            for arg in self.remove_args:
+                del cpy[user][arg]
+        for arg in self.remove_args:
+            self.fields.remove(arg)
+        self.data = cpy
+        
+        if self.points:
+            self.fields += ['points']
 
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead

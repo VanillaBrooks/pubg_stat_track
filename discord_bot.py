@@ -89,6 +89,12 @@ class MyClient(discord.Client):
             elif "graph" in message.content:
                 logging.info(f"handling {message.id} for graph")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+                if result.points:
+                    print("had to modify data")
+                    points = await utils.calculate_points(stats_weights, result, logging, True)
+                    result.data = await utils.merge_dicts(result.data_copy(), points)
+                    result.clean_data()
+                pprint(result.data)
                 await senders.graph(client, result, message, logging)
 
                 os.remove("graph.png")
