@@ -171,8 +171,10 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
     # pop out data that is not congruent for everyone 
     for user in data:
         for field in data[user]:
+            try: data_copy[user][field].reverse()
+            except Exception: pass
             for _ in range(len(data[user][field])-min_len):
-                data_copy[user][field].pop()
+                data_copy[user][field].pop(0)
     
     return ReturnData(pubg_user_list, data_copy, field_args, points_flag, remove_later)
 
