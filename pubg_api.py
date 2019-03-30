@@ -62,5 +62,4 @@ async def parse_roster_stats(player_list, fields, rosters, logging):
                 for field in fields:
                     data[person.name][field].append(stats[field])
 
-
     return data

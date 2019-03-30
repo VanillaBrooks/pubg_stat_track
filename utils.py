@@ -56,7 +56,7 @@ def logger_config():
     return logging
 
 
-async def calculate_points(stats_weights, result, logging):
+async def calculate_points(stats_weights, result, logging, list_format=False):
     '''
     Args:
         stats_weights: <dict> of fields and their associated weight
@@ -64,16 +64,23 @@ async def calculate_points(stats_weights, result, logging):
     returns:
         <dict> with (key: value) pair of (username: point total)
     '''
-    points = {user: {"points": 0.0} for user in result.users}
+    if list_format:
+        points = {user: {field: [] for field in result.extra_fields} for user in result.users}
+    else:
+        points = {user: {"points": 0.0} for user in result.users}
     
     for user_key in result.data:
         for field_key in result.data[user_key]:
             if not (field_key in list(stats_weights.keys())):
                 continue
-            total_sum = sum(result.data[user_key][field_key])
-            weight = stats_weights[field_key]
+            if list_format:
+                pass
+#############################################################################
+            else:
+                total_sum = sum(result.data[user_key][field_key])
+                weight = stats_weights[field_key]
 
-            points[user_key]['points'] += total_sum * weight
+                points[user_key]['points'] += total_sum * weight
 
     for user in points:
         points[user]['points'] = round(points[user]['points'] ,2)
@@ -136,8 +143,23 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
     # pop out data that is not congruent for everyone 
     for user in data:
         for field in data[user]:
-            for i in range(len(data[user][field])-min_len):
-                data_copy[user][field].pop(0)
+            for _ in range(len(data[user][field])-min_len):
+                data_copy[user][field].pop()
+    
+    for user in data_copy:
+        for field in data_copy[user]:
+            L = len(data_copy[user][field])
+            print(f'user {user} L: {L}')
+            if L == 0:
+                logging.info(
+                    f"{user} is being removed from the query because they have no data")
+                del data_copy[user]
+                pubg_user_list.remove(user)
+            elif min_len == 0:
+                min_len = L
+            elif L < min_len:
+                min_len = L
+            break
 
     return ReturnData(pubg_user_list, data_copy, field_args)
 
@@ -174,6 +196,8 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
+    users += "TheGigoloJoe Poc_Poc Captain_Crabby Happy--Penguin".split()
+
     print('users are: ', users)                                                                                     # manually adding stats herre
 
     return users
@@ -202,61 +226,73 @@ class ReturnData():
             for field_key in copy[user_key]:
                 copy[user_key][field_key] = round(sum(copy[user_key][field_key]), 1)
         return copy
+    def data_copy(self):
+        return dict(self.data)
 
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead
 #       as currenly there is wasted space
 async def find_max_length(input_dict, logging):
     max_len = 0
+    sample_user = list(input_dict.keys())[0]
+    print(f"sample user is {sample_user}")
+    len_dict = {field: 0 for field in input_dict[sample_user]}
+    len_dict["username"] = 0
 
     # TODO: Fix this to use max_len as a global variable 
     # to reduce ugly syntax currnetly used. Errored when originally
     # written
-    def change_len(x, max_len):
-        length = len(x)
-        if length > max_len:
-            max_len = length
-        return max_len
+    def change_len(x, len_dict, field, raw = False):
+        if field == "username":
+            data = x
+        elif raw == True:
+            data = field
+        else:
+            data = str(input_dict[x][field])
+        length = len(data)
+            
+        if length > len_dict[field]:
+            len_dict[field] = length
+
+        return len_dict
 
     for username in input_dict:
-        max_len = change_len(username, max_len)
+        len_dict = change_len(username, len_dict, "username")
         
         for field in input_dict[username]:
-            max_len = change_len(field, max_len)
+            len_dict = change_len(username, len_dict, field, raw=True)
 
             str_data = str(input_dict[username][field])
-            max_len = change_len(str_data, max_len)
-
-
-    return max_len
+            len_dict = change_len(username, len_dict, field)
+ 
+    return len_dict
 
 # format a dictionary as a string to be sent off
 async def dict_to_table(dict_to_fmt, logging):
-    max_len = await find_max_length(dict_to_fmt, logging) + 1
+    len_dict = await find_max_length(dict_to_fmt, logging)
 
     # right justifies a string with spaces
     # https://docs.python.org/3/library/stdtypes.html#str.format
-    def add_str(x, s):
-        new = "{: >{width}}".format(x, width = max_len)
+    def add_str(x, s, field):
+        new = "{: >{width}}".format(x, width = len_dict[field]+3)
         return s + new
 
     str_to_fmt = "```"
-    str_to_fmt = add_str("data", str_to_fmt)
+    str_to_fmt = add_str("username", str_to_fmt, "username")
 
     # add fields / column titles
 
-    sample_user = dict_to_fmt[list(dict_to_fmt.keys())[0]]
 
     for field in dict_to_fmt[list(dict_to_fmt.keys())[0]]:
-        str_to_fmt = add_str(field, str_to_fmt)
+        str_to_fmt = add_str(field, str_to_fmt, field)
 
     str_to_fmt += "\n"
 
     # add data and usernames to the rows
     for user in dict_to_fmt:
-        str_to_fmt = add_str(user, str_to_fmt)
+        str_to_fmt = add_str(user, str_to_fmt, "username")
         for field in dict_to_fmt[user]:
-            str_to_fmt = add_str(str(dict_to_fmt[user][field]), str_to_fmt)
+            str_to_fmt = add_str(str(dict_to_fmt[user][field]), str_to_fmt, field)
         str_to_fmt += "\n"
     
     str_to_fmt += '```'
