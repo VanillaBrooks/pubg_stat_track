@@ -44,47 +44,71 @@ class MyClient(discord.Client):
     async def on_ready(self):
         print(f'ready {self.user}')
 
+        resting_place = channel = discord.utils.get(
+            client.get_all_channels(), server__name='Anger Central', name="Michael's Resting Place")
+        all_channels = client.get_all_channels()
+        while True:
+            for channel in all_channels:
+                for member in channel.voice_members:
+                    # print(f'{member.id}, {member.name}')
+                    if int(member.id) == 119628439610195970 and member.self_deaf:
+                        try:
+                            await client.move_member(member, resting_place)
+                        except Exception:
+                            logging.exception(f"Michael was not able to be moved from {channel.name}")
+            await asyncio.sleep(5)
+
     async def on_message(self, message):
         if str(message.author) == 'StoryTeller#2596':
             return None
+        logging.info(f"new query ({message.id}) recieved from {message.author}: {message.content}")
+        print(f"new query ({message.id}) recieved from {message.author}: {message.content}")
         if '?pubg' in message.content:
 
             if "points" in message.content:
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
+                logging.info(f"handling {message.id} for points")
+                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+                logging.info("return from get_data in points")
                 print("users from result, ", result.users)
-                points = await utils.calculate_points(stats_weights, result)
-                await senders.send_points(client, points, message.channel)
+                points = await utils.calculate_points(stats_weights, result, logging)
+                logging.info("return from calculate_points in points")
+                await senders.send_points(client, points, message.channel, logging)
 
             elif 'stats' in message.content:
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
-                await senders.send_stats(client, result, message.channel)
+                logging.info(f"handling {message.id} for stats")
+                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+                await senders.send_stats(client, result, message.channel, logging)
 
             elif 'fields' in message.content:
+                logging.info(f"handling {message.id} for fields")
                 str_to_fmt = '```Valid fields to query:\n'
                 str_to_fmt += ''.join(i + ' ' for i in valid_fields)
                 str_to_fmt += '\n```'
                 await client.send_message(message.channel, str_to_fmt)
 
             elif "graph" in message.content:
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
-                await senders.graph(client, result, message)
+                logging.info(f"handling {message.id} for graph")
+                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+                await senders.graph(client, result, message, logging)
 
                 os.remove("graph.png")
 
             elif 'combo' in message.content:
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client)
-                points = await utils.calculate_points(stats_weights, result)
+                logging.info(f"handling {message.id} for combo")
+                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+                points = await utils.calculate_points(stats_weights, result, logging)
                 combined = await utils.merge_dicts(result.stat_totals(), points)
                 
-                await senders.send_combo(client, combined, message.channel)
+                await senders.send_combo(client, combined, message.channel, logging)
 
             else:
                 help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \
                     \nPossible catagories (case sensitive): kills, damageDealt, revives```"
                 await client.send_message(message.channel, help_str)
 
-
+logging = utils.logger_config()
 if __name__ == '__main__':
+    # from api_brooksie import discord_token
     logging = utils.logger_config()
     client = MyClient()
     client.run(discord_token)

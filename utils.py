@@ -9,22 +9,29 @@ import os
 from pprint import pprint
 
 # construct line graph and send to discord chat
-async def construct_graph(df_dict, key):
+async def construct_graph(df_dict, key, logging):
     '''
     Args: 
         df_dict: <dict> of pandas dataframes. The keys are the categories queried and the values
             are <list>s  dataframes associated with that data
         key: <str> of the type of data we are constructing the graph for
     '''
+    logging.debug("about to clear graph")
     plt.clf()
     # concatenate the list of dataframes together
+    logging.debug("concat franes")
     data = pd.concat(df_dict[key], axis=1)#.fillna(0)
+    logging.debug("set stype")
     sns.set(style="darkgrid")
+    logging.debug("make grid")
     sns_plot =sns.lineplot(data=data).set_title(key)
+    logging.debug("add labels")
     plt.xlabel("games played")
     plt.ylabel("total {}".format(key))
 
+    logging.debug("get figure")
     fig = sns_plot.get_figure()
+    logging.debug("save figure")
     fig.savefig("graph.png")
 
 
@@ -49,7 +56,7 @@ def logger_config():
     return logging
 
 
-async def calculate_points(stats_weights, result):
+async def calculate_points(stats_weights, result, logging):
     '''
     Args:
         stats_weights: <dict> of fields and their associated weight
@@ -57,23 +64,26 @@ async def calculate_points(stats_weights, result):
     returns:
         <dict> with (key: value) pair of (username: point total)
     '''
-    points = {user: {"points": 0} for user in result.users}
+    points = {user: {"points": 0.0} for user in result.users}
     
     for user_key in result.data:
         for field_key in result.data[user_key]:
-
+            if not (field_key in list(stats_weights.keys())):
+                continue
             total_sum = sum(result.data[user_key][field_key])
+            weight = stats_weights[field_key]
 
-            points[user_key]['points'] += round(total_sum * stats_weights[field_key], 2)
+            points[user_key]['points'] += total_sum * weight
 
-    print("\n\n points are : ")
-    pprint(points)
+    for user in points:
+        points[user]['points'] = round(points[user]['points'] ,2)
+
     return points
 
 
 # ??????????????????????????????????????????????????????????? FIX THIS FUNCTION W/ REGEX
 # fetch data from the pubg api 
-async def get_data(message, stats_weights, discord_to_pubg, client):
+async def get_data(message, stats_weights, discord_to_pubg, client, logging):
     '''
     Args:
         message: <class: Discord.Message> the recieved message from discord
@@ -95,23 +105,45 @@ async def get_data(message, stats_weights, discord_to_pubg, client):
 
     current_time_utc = datetime.datetime.utcnow()
     query_time = current_time_utc - datetime.timedelta(hours=hours)
+    logging.info(f"hours are parsed to be {hours}")
+    logging.info(f"query start time UTC is {query_time}")
 
-    print('field args before ', field_args)
     if len(field_args) == 0: # if no args were specified we use the default 3
         field_args = list(stats_weights.keys())
-    print('field args are', field_args)
+    logging.info(f"arguments for fields to query are {field_args}")
 
-    pubg_user_list = await construct_user_list(discord_to_pubg, message.author, client)
+    pubg_user_list = await construct_user_list(discord_to_pubg, message.author, client, logging)
 
-    rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time)
-    data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, rosters)
+    rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging)
+    data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, rosters, logging)
     
+    # calculate the minimun number of games someone in the party has
+    min_len = 0
+    data_copy = dict(data)
+    for user in data:
+        for field in data[user]:
+            L = len(data[user][field])
+            if L == 0:
+                logging.info(f"{user} is being removed from the query because they have no data")
+                del data_copy[user]
+                pubg_user_list.remove(user)
+            elif min_len ==0:
+                min_len = L
+            elif L < min_len:
+                min_len = L
+            break
+    
+    # pop out data that is not congruent for everyone 
+    for user in data:
+        for field in data[user]:
+            for i in range(len(data[user][field])-min_len):
+                data_copy[user][field].pop(0)
 
-    return ReturnData(pubg_user_list, data, field_args)
+    return ReturnData(pubg_user_list, data_copy, field_args)
 
 
 # find all users playing in a channel
-async def construct_user_list(discord_to_pubg, author, client):
+async def construct_user_list(discord_to_pubg, author, client, logging):
     '''
     Args:
         discord_to_pubg: <dict> of conversions between discord usernames and pubg usernames
@@ -151,11 +183,8 @@ async def merge_dicts(*args):
     total = args[0]
 
     for i_ in args[1:]:
-        print("i_ is ", i_)
         for user in i_:
-            print("user is ", user)
             for field in i_[user]:
-                print("field is ", field)
                 total[user][field] = i_[user][field]
 
     return total
@@ -177,7 +206,7 @@ class ReturnData():
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead
 #       as currenly there is wasted space
-async def find_max_length(input_dict):
+async def find_max_length(input_dict, logging):
     max_len = 0
 
     # TODO: Fix this to use max_len as a global variable 
@@ -188,8 +217,7 @@ async def find_max_length(input_dict):
         if length > max_len:
             max_len = length
         return max_len
-    print("find max length dictioanry being used")    
-    pprint(input_dict)
+
     for username in input_dict:
         max_len = change_len(username, max_len)
         
@@ -203,8 +231,8 @@ async def find_max_length(input_dict):
     return max_len
 
 # format a dictionary as a string to be sent off
-async def dict_to_table(dict_to_fmt):
-    max_len = await find_max_length(dict_to_fmt) + 1
+async def dict_to_table(dict_to_fmt, logging):
+    max_len = await find_max_length(dict_to_fmt, logging) + 1
 
     # right justifies a string with spaces
     # https://docs.python.org/3/library/stdtypes.html#str.format
@@ -216,11 +244,9 @@ async def dict_to_table(dict_to_fmt):
     str_to_fmt = add_str("data", str_to_fmt)
 
     # add fields / column titles
-    print("working dict: ")
-    pprint(dict_to_fmt)
+
     sample_user = dict_to_fmt[list(dict_to_fmt.keys())[0]]
-    print("\n\n sample user:")
-    pprint(sample_user)
+
     for field in dict_to_fmt[list(dict_to_fmt.keys())[0]]:
         str_to_fmt = add_str(field, str_to_fmt)
 
@@ -228,10 +254,8 @@ async def dict_to_table(dict_to_fmt):
 
     # add data and usernames to the rows
     for user in dict_to_fmt:
-        print(f"user is {user}")
         str_to_fmt = add_str(user, str_to_fmt)
         for field in dict_to_fmt[user]:
-            print(f"field is {field}")
             str_to_fmt = add_str(str(dict_to_fmt[user][field]), str_to_fmt)
         str_to_fmt += "\n"
     

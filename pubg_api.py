@@ -14,7 +14,7 @@ async def date_parse_from_string(input_string):
 
     return time_obj
 
-async def get_relevant_rosters(player_list, start_time):
+async def get_relevant_rosters(player_list, start_time, logging):
     api = pubg_python.PUBG(pubg_secret, pubg_python.Shard.PC_NA)
     all_rosters = []
     analyzed_matches = []
@@ -34,12 +34,12 @@ async def get_relevant_rosters(player_list, start_time):
             if await date_parse_from_string(match_data.created_at) < start_time:
                 break # no longer looking at matches from active session
             
-            all_rosters += await find_all_rosters(match_data, player_list)
+            all_rosters += await find_all_rosters(match_data, player_list, logging)
 
     return all_rosters
 
 # start paring through the rosters
-async def find_all_rosters(match_data, player_list):
+async def find_all_rosters(match_data, player_list, logging):
     rosters_to_check = []
 
     for roster in match_data.rosters:
@@ -51,7 +51,7 @@ async def find_all_rosters(match_data, player_list):
 
     return rosters_to_check
 
-async def parse_roster_stats(player_list, fields, rosters):
+async def parse_roster_stats(player_list, fields, rosters, logging):
     data = {player : {field: [] for field in fields} for player in player_list}
 
     for roster in rosters:
