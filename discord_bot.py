@@ -46,16 +46,20 @@ class MyClient(discord.Client):
 
         resting_place = channel = discord.utils.get(
             client.get_all_channels(), server__name='Anger Central', name="Michael's Resting Place")
-        all_channels = client.get_all_channels()
         while True:
+            all_channels = client.get_all_channels()
             for channel in all_channels:
                 for member in channel.voice_members:
                     # print(f'{member.id}, {member.name}')
-                    if int(member.id) == 119628439610195970 and member.self_deaf:
-                        try:
-                            await client.move_member(member, resting_place)
-                        except Exception:
-                            logging.exception(f"Michael was not able to be moved from {channel.name}")
+                    # brooks: 83987573919191040
+                    if int(member.id) in [119628439610195970]:
+                        logging.info(f"michael is in {channel.name}")
+                        if member.self_deaf:
+                            logging.info("michael is deaf, moving to new channel")
+                            try:
+                                await client.move_member(member, resting_place)
+                            except Exception:
+                                logging.exception(f"Michael was not able to be moved from {channel.name}")
             await asyncio.sleep(5)
 
     async def on_message(self, message):
