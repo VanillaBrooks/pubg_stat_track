@@ -16,6 +16,7 @@ async def date_parse_from_string(input_string):
 async def get_relevant_rosters(player_list, start_time, logging, client, query_channel):
     api = pubg_python.PUBG(pubg_secret, pubg_python.Shard.PC_NA)
     all_rosters = []
+    no_player_data = []
     analyzed_matches = []
 
     for current_player in player_list:              # todo: use player_list instead
@@ -27,7 +28,14 @@ async def get_relevant_rosters(player_list, start_time, logging, client, query_c
             except pubg_python.exceptions.RateLimitError:
                 await client.send_message(query_channel, 'rate limited. continuing in 10 seconds')
                 await asyncio.sleep(10)
-            
+        
+        # player has no matches on the active patch. this prevents the query from crashing
+        try:player_matches = player.matches
+        except Exception: 
+            logging.exception(f"player {current_player} has no matches in the current patch")
+            # client.send_message(query_channel, f"player {current_player} has no matches in the current patch")
+            no_player_data.append(current_player)
+            continue
             
         for match_id in player.matches:
             logging.info(f"checking {match_id} from matches for {current_player}")
@@ -53,8 +61,11 @@ async def get_relevant_rosters(player_list, start_time, logging, client, query_c
                 break # no longer looking at matches from active session
             
             all_rosters += await find_all_rosters(match_data, player_list, logging)
+    
+    ApiData = ApiResult(player_list, no_player_data, all_rosters)
+    
 
-    return all_rosters
+    return ApiData
 
 # start paring through the rosters
 async def find_all_rosters(match_data, player_list, logging):
@@ -83,3 +94,13 @@ async def parse_roster_stats(player_list, fields, rosters, logging):
                     data[person.name][field].append(stats[field])
 
     return data
+
+class ApiResult():
+    def __init__(self, player_list, no_player_data, all_rosters):
+        self.player_list = player_list
+        self.bad_players = no_player_data
+        self.roster_data = all_rosters
+    def clean_player_list(self):
+        for i in self.bad_players:
+            self.player_list.remove(i)
+        return self.player_list

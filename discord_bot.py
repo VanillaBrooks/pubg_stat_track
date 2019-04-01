@@ -73,6 +73,8 @@ class MyClient(discord.Client):
                 logging.info(f"handling {message.id} for points")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
 
+                if not len(result): return False
+
                 logging.info("return from get_data in points")
                 points = await utils.calculate_points(stats_weights, result, logging)
 
@@ -82,6 +84,8 @@ class MyClient(discord.Client):
             elif 'stats' in message.content:
                 logging.info(f"handling {message.id} for stats")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+
+                if not len(result): return False
 
                 await senders.send_stats(client, result, message.channel, logging)
 
@@ -98,8 +102,9 @@ class MyClient(discord.Client):
                 logging.info(f"handling {message.id} for graph")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
 
+                if not len(result): return False
+
                 if result.points:
-                    print("had to modify data")
                     points = await utils.calculate_points(stats_weights, result, logging, True)
                     result.data = await utils.merge_dicts(result.data_copy(), points)
                     result.clean_data()
@@ -111,6 +116,9 @@ class MyClient(discord.Client):
             elif 'combo' in message.content:
                 logging.info(f"handling {message.id} for combo")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
+
+                if not len(result): return False
+                
                 points = await utils.calculate_points(stats_weights, result, logging)
                 combined = await utils.merge_dicts(result.stat_totals(), points)
                 

@@ -149,9 +149,11 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
         
     pubg_user_list = await construct_user_list(discord_to_pubg, message.author, client, logging)
 
-    rosters = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging, client, message.channel)
-    data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, rosters, logging)
+    ApiResult = await pubg_api.get_relevant_rosters(pubg_user_list, query_time, logging, client, message.channel)
+    pubg_user_list = ApiResult.clean_player_list() # remove data for users that dont have any api data
+    data = await pubg_api.parse_roster_stats(pubg_user_list, field_args, ApiResult.roster_data, logging)
     
+
     # calculate the minimun number of games someone in the party has
     min_len = 0
     data_copy = dict(data)
@@ -211,7 +213,7 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
-    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Happy--Penguin".split()
+    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
 
     # print('users are: ', users)                                                                                     # manually adding stats herre
 
@@ -243,6 +245,7 @@ class ReturnData():
             for field_key in copy[user_key]:
                 copy[user_key][field_key] = round(sum(copy[user_key][field_key]), 1)
         return copy
+
     def data_copy(self):
         return dict(self.data)
 
@@ -258,6 +261,9 @@ class ReturnData():
         
         if self.points:
             self.fields += ['points']
+
+    def __len__(self):
+        return len(self.users)
 
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead
