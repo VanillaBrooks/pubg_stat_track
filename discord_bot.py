@@ -58,6 +58,7 @@ class MyClient(discord.Client):
                             logging.info("michael is deaf, moving to new channel")
                             try:
                                 await client.move_member(member, resting_place)
+                                await client.send_message('Micahel will now rest')
                             except Exception:
                                 logging.exception(f"Michael was not able to be moved from {channel.name}")
             await asyncio.sleep(5)
@@ -93,8 +94,7 @@ class MyClient(discord.Client):
                 logging.info(f"handling {message.id} for fields")
 
                 str_to_fmt = '```Valid fields to query:\n'
-                str_to_fmt += ''.join(i + ' ' for i in valid_fields)
-                str_to_fmt += '\n```'
+                str_to_fmt += ''.join(i + ' ' for i in valid_fields) + '\n```'
 
                 await client.send_message(message.channel, str_to_fmt)
 
