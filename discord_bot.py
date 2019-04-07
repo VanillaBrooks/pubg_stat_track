@@ -30,7 +30,7 @@ discord_to_pubg = {
     'Big Dick Bandit#8045': 'Loko_Soko',
     'Gigolojoe#7817': 'TheGigoloJoe',
     'PocPoc#7403': 'Poc_Poc',
-    'Pool Boy Steve#7324': 'SandyBrooks',
+    'Croutons#7324': 'SandyBrooks',
     'colbykarlik#0348':'Captain_Crabby',
     'LEGIQn#7532':'LEGIQn_',
     'Joeyeyey#8697' : 'Joeyeyey',
