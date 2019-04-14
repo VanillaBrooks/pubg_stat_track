@@ -64,7 +64,7 @@ class MyClient(discord.Client):
                             logging.info("michael is deaf, moving to new channel")
                             try:
                                 await client.move_member(member, resting_place)
-                                await client.send_message(main_channel, 'Micahel will now rest')
+                                await client.send_message(main_channel, 'Michael will now rest')
                             except Exception:
                                 logging.exception(f"Michael was not able to be moved from {channel.name}")
             await asyncio.sleep(5)
@@ -112,10 +112,20 @@ class MyClient(discord.Client):
 
                 os.remove("graph.png")
 
-
             else:
-                help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \
-                    \nPossible catagories (case sensitive): kills, damageDealt, revives```"
+                help_str = "```USAGE: \n?pubg <stats> <hours> <space separated categories>\
+                    \n?pubg <graph> <hours> <space separated catagories> \
+                    \nPossible catagories are:\
+                    \n{cats}\
+                    \nadditional keywords for multiple categories:\
+                    \ncombo: kills damageDealt revives points\
+                    \nextended: kills DBNOs damageDealt assists headshotKills hea ls boosts revives timeSurvived rideDistance weaponsAcquired points\
+                    \n\nExamples:\
+                    \n?pubg stats 3 combo\
+                    \n?pubg stats 2 extended\
+                    \n?pubg graph 6 damageDealt heals revives\
+                    \n?pubg graph 3 combo\
+                    ```".format(cats=''.join(i + " " for i in valid_fields))
                 await client.send_message(message.channel, help_str)
 
 logging = utils.logger_config()

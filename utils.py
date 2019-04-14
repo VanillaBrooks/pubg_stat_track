@@ -270,6 +270,12 @@ class ReturnData():
     def __len__(self):
         return len(self.users)
 
+    def data_length(self):
+        try:
+            return str(self.data[self.users[0]][self.fields[0]])
+        except Exception:
+            return 'error'
+
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead
 #       as currenly there is wasted space
@@ -315,7 +321,7 @@ async def dict_to_table(dict_to_fmt, logging):
         new = "{: >{width}}".format(x, width = len_dict[field]+1)
         return s + new
 
-    str_to_fmt = "```"
+    str_to_fmt = ""
     str_to_fmt = add_str("username", str_to_fmt, "username")
 
     # add fields / column titles
@@ -333,6 +339,5 @@ async def dict_to_table(dict_to_fmt, logging):
             str_to_fmt = add_str(str(dict_to_fmt[user][field]), str_to_fmt, field)
         str_to_fmt += "\n"
     
-    str_to_fmt += '```'
     # return the formatted table
     return str_to_fmt

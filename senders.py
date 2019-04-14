@@ -4,6 +4,10 @@ import pandas as pd
 async def send_stats(client, result, channel, logging):
     logging.info('converting dictionary to table')
     str_to_fmt = await utils.dict_to_table(result.stat_totals(), logging)
+    game_len = result.data_length()
+    str_to_fmt = "```" + str_to_fmt + "\n" + f"number of games analyzed: {game_len}```" 
+    
+
     logging.info('sending message')
 
     await client.send_message(channel, str_to_fmt)
