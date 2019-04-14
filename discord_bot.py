@@ -86,6 +86,11 @@ class MyClient(discord.Client):
                 logging.info(f"handling {message.id} for stats")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
 
+                if result.points:
+                    points = await utils.calculate_points(stats_weights, result, logging, True)
+                    result.data = await utils.merge_dicts(result.data_copy(), points)
+                    result.clean_data()
+
                 if not len(result): return False
 
                 await senders.send_stats(client, result, message.channel, logging)

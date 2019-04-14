@@ -213,7 +213,7 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
-    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
+    users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
 
     # print('users are: ', users)                                                                                     # manually adding stats herre
 
