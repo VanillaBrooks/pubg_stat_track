@@ -135,9 +135,9 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
     
     remove_later = []
     points_flag = False
-    if "pts" in field_args:
+    if "points" in field_args:
         points_flag = True
-        field_args.remove("pts")
+        field_args.remove("points")
         
         for i in list(stats_weights):
             if i not in field_args:

@@ -24,7 +24,7 @@ stats_weights = {
 }
 
 valid_fields = 'DBNOs assists boosts damageDealt headshotKills heals kills revives rideDistance timeSurvived weaponsAcquired winPlace'.split(' ')
-
+"DBNOs   kills   damageDealt assists headshotKills heals revives points"
 # conversion from discord name to pubg username
 discord_to_pubg = {
     'Big Dick Bandit#8045': 'Loko_Soko',
@@ -46,6 +46,9 @@ class MyClient(discord.Client):
 
         resting_place = channel = discord.utils.get(
             client.get_all_channels(), server__name='Anger Central', name="Michael's Resting Place")
+        main_channel = channel = discord.utils.get(
+            client.get_all_channels(), server__name='Anger Central', name="main")
+
         while True:
             all_channels = client.get_all_channels()
             for channel in all_channels:
@@ -58,7 +61,7 @@ class MyClient(discord.Client):
                             logging.info("michael is deaf, moving to new channel")
                             try:
                                 await client.move_member(member, resting_place)
-                                await client.send_message('Micahel will now rest')
+                                await client.send_message(main_channel, 'Micahel will now rest')
                             except Exception:
                                 logging.exception(f"Michael was not able to be moved from {channel.name}")
             await asyncio.sleep(5)
@@ -70,19 +73,7 @@ class MyClient(discord.Client):
         print(f"new query ({message.id}) recieved from {message.author}: {message.content}")
         if '?pubg' in message.content:
 
-            if "points" in message.content:
-                logging.info(f"handling {message.id} for points")
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
-
-                if not len(result): return False
-
-                logging.info("return from get_data in points")
-                points = await utils.calculate_points(stats_weights, result, logging)
-
-                logging.info("return from calculate_points in points")
-                await senders.send_points(client, points, message.channel, logging)
-
-            elif 'stats' in message.content:
+            if 'stats' in message.content:
                 logging.info(f"handling {message.id} for stats")
                 result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
 
