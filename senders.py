@@ -5,15 +5,7 @@ async def send_stats(client, result, channel, logging):
     logging.info('converting dictionary to table')
     str_to_fmt = await utils.dict_to_table(result.stat_totals(), logging)
     logging.info('sending message')
-    
-    await client.send_message(channel, str_to_fmt)
-    
 
-
-async def send_combo(client, data_dict, channel, logging):
-    logging.info('converting dictionary to table')
-    str_to_fmt = await utils.dict_to_table(data_dict, logging)
-    logging.info('sending message')
     await client.send_message(channel, str_to_fmt)
 
 # TODO: this shit errors if there is no data for one of the users. 

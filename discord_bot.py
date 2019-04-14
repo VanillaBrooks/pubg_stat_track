@@ -18,13 +18,13 @@ import utils
 
 # fields of the stats that we care about
 stats_weights = {
-    'kills': 1,
+    'kills': .7,
     'damageDealt': .3/100,
     'revives': .5
 }
 
 valid_fields = 'DBNOs assists boosts damageDealt headshotKills heals kills revives rideDistance timeSurvived weaponsAcquired winPlace'.split(' ')
-"DBNOs   kills   damageDealt assists headshotKills heals revives points"
+
 # conversion from discord name to pubg username
 discord_to_pubg = {
     'Big Dick Bandit#8045': 'Loko_Soko',
@@ -56,8 +56,11 @@ class MyClient(discord.Client):
                     # print(f'{member.id}, {member.name}')
                     # brooks: 83987573919191040
                     if int(member.id) in [119628439610195970]:
-                        logging.info(f"michael is in {channel.name}")
-                        if member.self_deaf:
+
+                        logging.info(f"michael is in channel {channel.name} WITH ID: {channel.id}")
+
+                        # if micahel is deaf and he is not already in his resting place
+                        if member.self_deaf and  int(channel.id) != 558874519629070346:
                             logging.info("michael is deaf, moving to new channel")
                             try:
                                 await client.move_member(member, resting_place)
@@ -109,16 +112,6 @@ class MyClient(discord.Client):
 
                 os.remove("graph.png")
 
-            elif 'combo' in message.content:
-                logging.info(f"handling {message.id} for combo")
-                result = await utils.get_data(message, stats_weights, discord_to_pubg, client, logging)
-
-                if not len(result): return False
-                
-                points = await utils.calculate_points(stats_weights, result, logging)
-                combined = await utils.merge_dicts(result.stat_totals(), points)
-                
-                await senders.send_combo(client, combined, message.channel, logging)
 
             else:
                 help_str = "```USAGE: \n?pubg <stats> <hours>\n?pubg <graph> <hours> <space separated catagories> \

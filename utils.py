@@ -125,6 +125,11 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
             hours = int(item)
             capture_args = True
 
+    if "extended" in field_args:
+        field_args = "kills DBNOs damageDealt assists headshotKills heals boosts revives timeSurvived rideDistance weaponsAcquired points".split(' ')
+    elif 'combo' in field_args:
+        field_args = "kills damageDealt revives points".split(' ')
+
     current_time_utc = datetime.datetime.utcnow()
     query_time = current_time_utc - datetime.timedelta(hours=hours)
     logging.info(f"hours are parsed to be {hours}")
@@ -213,7 +218,7 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
-    users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
+    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
 
     # print('users are: ', users)                                                                                     # manually adding stats herre
 
@@ -307,7 +312,7 @@ async def dict_to_table(dict_to_fmt, logging):
     # right justifies a string with spaces
     # https://docs.python.org/3/library/stdtypes.html#str.format
     def add_str(x, s, field):
-        new = "{: >{width}}".format(x, width = len_dict[field]+3)
+        new = "{: >{width}}".format(x, width = len_dict[field]+1)
         return s + new
 
     str_to_fmt = "```"
