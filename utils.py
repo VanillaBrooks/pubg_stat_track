@@ -182,8 +182,10 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
             except Exception: pass
             for _ in range(len(data[user][field])-min_len):
                 data_copy[user][field].pop(0)
+                
+    data_length = len(data_copy[pubg_user_list[0]][field_args[0]])
     
-    return ReturnData(pubg_user_list, data_copy, field_args, points_flag, remove_later)
+    return ReturnData(pubg_user_list, data_copy, field_args, points_flag, remove_later, data_length)
 
 
 # find all users playing in a channel
@@ -236,12 +238,13 @@ async def merge_dicts(*args):
     return total
 
 class ReturnData():
-    def __init__(self, user_list, data, fields, points_flag, to_be_removed):
+    def __init__(self, user_list, data, fields, points_flag, to_be_removed,num_games):
         self.data = data
         self.users = user_list
         self.fields = fields
         self.points = points_flag
         self.remove_args = to_be_removed
+        self.num_games = num_games
 
     # return a copy of the dictionary with summed and rounded values
     def stat_totals(self):
@@ -269,12 +272,6 @@ class ReturnData():
 
     def __len__(self):
         return len(self.users)
-
-    def data_length(self):
-        try:
-            return str(self.data[self.users[0]][self.fields[0]])
-        except Exception:
-            return 'error'
 
 # get the maximum lenth of all the data in a dictionary
 # TODO: Return a dictionary with the length associated with each column instead
