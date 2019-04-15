@@ -1,10 +1,11 @@
-import pubg_api
+import src.pubg_api as pubg_api
 import matplotlib.pyplot as plt
 import logging
 import datetime
 import pandas as pd
 import seaborn as sns
 import os
+import sys
 
 from pprint import pprint
 
@@ -38,7 +39,11 @@ async def construct_graph(df_dict, key, logging):
 
 # sets up all logging config and logging folders
 def logger_config():
-    logging_folder = 'logging/'
+
+    working_dir = os.path.dirname(os.path.realpath(__file__))
+    outer_dir = working_dir.split('\\')[:-1] + ['logging']
+    logging_folder = ''.join(i + "/" for i in outer_dir)
+
     try:
         os.mkdir(logging_folder)
     except Exception:
@@ -182,7 +187,7 @@ async def get_data(message, stats_weights, discord_to_pubg, client, logging):
             except Exception: pass
             for _ in range(len(data[user][field])-min_len):
                 data_copy[user][field].pop(0)
-                
+
     data_length = len(data_copy[pubg_user_list[0]][field_args[0]])
     
     return ReturnData(pubg_user_list, data_copy, field_args, points_flag, remove_later, data_length)
@@ -220,7 +225,7 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
-    # users += "TheGigoloJoe Poc_Poc Captain_Crabby Loko_Soko".split()
+    # users = "Poc_Poc Captain_Crabby Loko_Soko".split()
 
     # print('users are: ', users)                                                                                     # manually adding stats herre
 
@@ -338,3 +343,4 @@ async def dict_to_table(dict_to_fmt, logging):
     
     # return the formatted table
     return str_to_fmt
+

@@ -1,0 +1,13 @@
+
+
+pubg_secret = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJkYjNiOWYwMC0yYjE3LTAxMzctYTBjOC0yZjNlZWU1YmYwZTgiLCJpc3MiOiJnYW1lbG9ja2VyIiwiaWF0IjoxNTUyODUwNTE4LCJwdWIiOiJibHVlaG9sZSIsInRpdGxlIjoicHViZyIsImFwcCI6InB1YmdfZGlzY29yZF8yIn0.4qsIab8_lYNHJcj_P1fj_uE82kqF1u86LUT8DbCKc84'
+discord_token = 'NTU4MTMwMDg1ODI0Mjk5MDE5.D3Splg.DKhxPBzXSRHiVK2z10BAjtv7M3Y'
+discord_secret = 'w5_EzmPW63HJ9UZNFFIBT7O_aQWFZAFX'
+
+        
+
+
+
+
+
+

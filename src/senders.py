@@ -1,4 +1,4 @@
-import utils
+import src.utils as utils
 import pandas as pd
 
 async def send_stats(client, result, channel, logging):

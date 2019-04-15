@@ -8,13 +8,15 @@ from pprint import pprint
 
 # std lib
 import os
+import sys
 import time
 import asyncio
 
-# local files
-from api import discord_token
-import senders
-import utils
+
+from src.api import discord_token
+import src.senders as senders
+import src.utils as utils
+# discord_token as discord_token
 
 # fields of the stats that we care about
 stats_weights = {
@@ -67,7 +69,7 @@ class MyClient(discord.Client):
                                 await client.send_message(main_channel, 'Michael will now rest')
                             except Exception:
                                 logging.exception(f"Michael was not able to be moved from {channel.name}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(1)
 
     async def on_message(self, message):
         if str(message.author) == 'StoryTeller#2596':
@@ -128,9 +130,7 @@ class MyClient(discord.Client):
                     ```".format(cats=''.join(i + " " for i in valid_fields))
                 await client.send_message(message.channel, help_str)
 
+
 logging = utils.logger_config()
-if __name__ == '__main__':
-    # from api_brooksie import discord_token
-    logging = utils.logger_config()
-    client = MyClient()
-    client.run(discord_token)
+client = MyClient()
+client.run(discord_token)

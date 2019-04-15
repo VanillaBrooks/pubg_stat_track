@@ -1,6 +1,6 @@
 import pubg_python
 from pprint import pprint
-from api import pubg_secret
+from src.api import pubg_secret
 import datetime as dt
 import asyncio
 #delete later

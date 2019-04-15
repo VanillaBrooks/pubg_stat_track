@@ -12,7 +12,7 @@ with open('requirements.txt', 'r') as f:
 setup(
 	name='pubg_stat_track',
 	version='0.0.1',
-	packages=[''],
+	packages=['src'],
 	install_requires=pkg_install,
 	include_package_data=True,
 	zip_safe=False,
