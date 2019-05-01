@@ -40,6 +40,19 @@ discord_to_pubg = {
     'Torrannosaurusrex#1167': 'Prowler337'
 }
 
+'''
+342078108775481344, PocPoc
+406695889625939968, happypenguin
+83987573919191040, Croutons
+119628439610195970, LEGIQn
+134137470638882817, Joeyeyey
+572985814037037057, peppercorn
+342078108775481344, PocPoc
+406695889625939968, happypenguin
+83987573919191040, Croutons
+119628439610195970, LEGIQn
+134137470638882817, Joe
+'''
 
 class MyClient(discord.Client):
 
@@ -57,10 +70,9 @@ class MyClient(discord.Client):
                 for member in channel.voice_members:
                     # print(f'{member.id}, {member.name}')
                     # brooks: 83987573919191040
-                    if int(member.id) in [119628439610195970]:
 
+                    if int(member.id)  == 119628439610195970:
                         logging.info(f"michael is in channel {channel.name} WITH ID: {channel.id}")
-
                         # if micahel is deaf and he is not already in his resting place
                         if member.self_deaf and  int(channel.id) != 558874519629070346:
                             logging.info("michael is deaf, moving to new channel")
@@ -69,6 +81,14 @@ class MyClient(discord.Client):
                                 await client.send_message(main_channel, 'Michael will now rest')
                             except Exception:
                                 logging.exception(f"Michael was not able to be moved from {channel.name}")
+                    if int(member.id) == 572985814037037057:
+                        logging.info(f"lily is in channel {channel.name} WITH ID {channel.id}")
+                        if member.self_mute and int(channel.id) != 558874519629070346:
+                            try:
+                                await client.move_member(member, resting_place)
+                                await client.send_message("Lily will now rest")
+                            except Exception:
+                                Logging.exceptions(f"there was a problem moving lily to michaels resting place")
             await asyncio.sleep(1)
 
     async def on_message(self, message):

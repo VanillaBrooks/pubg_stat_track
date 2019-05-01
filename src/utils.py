@@ -54,7 +54,7 @@ def logger_config():
         datetime.datetime.now().strftime('%m-%d__%H-%M-%S') + '.txt'
 
     logging.basicConfig(filename=LOG_FILENAME,
-                        level=logging.DEBUG,
+                        level=logging.INFO,
                         format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -225,6 +225,7 @@ async def construct_user_list(discord_to_pubg, author, client, logging):
 
     # users.append('Captain_Crabby')
     # users.append('Loko_Soko')
+    # users = "Captain_Crabby Happy--Penguin".split(' ')
     # users = "Poc_Poc Captain_Crabby Loko_Soko".split()
 
     # print('users are: ', users)                                                                                     # manually adding stats herre
